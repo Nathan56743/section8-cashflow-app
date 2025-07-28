@@ -2,49 +2,130 @@
 <html>
 <head>
     <title>Profitable Section 8 Properties</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #333;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .high-roi {
+            color: green;
+            font-weight: bold;
+        }
+        .medium-roi {
+            color: orange;
+        }
+        .low-roi {
+            color: red;
+        }
+        .filters {
+            margin-bottom: 20px;
+        }
+        .filters input, .filters select {
+            padding: 8px;
+            margin-right: 10px;
+        }
+        .filters button {
+            padding: 8px 12px;
+        }
+    </style>
+    <script>
+        function filterTable() {
+            const minCashFlow = parseFloat(document.getElementById("minCashFlow").value) || 0;
+            const sellerFinancing = document.getElementById("sellerFinancing").value;
+            const rows = document.querySelectorAll("tbody tr");
+
+            rows.forEach(row => {
+                const cashFlow = parseFloat(row.getAttribute("data-cash-flow"));
+                const financing = row.getAttribute("data-financing");
+
+                const matchesCashFlow = cashFlow >= minCashFlow;
+                const matchesFinancing = sellerFinancing === "any" || financing === sellerFinancing;
+
+                row.style.display = matchesCashFlow && matchesFinancing ? "" : "none";
+            });
+        }
+
+        function downloadCSV() {
+            const rows = [...document.querySelectorAll("table tr")];
+            const csvContent = rows.map(row =>
+                [...row.querySelectorAll("th, td")].map(cell => `"${cell.innerText}"`).join(",")
+            ).join("\n");
+
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "filtered_properties.csv";
+            link.click();
+        }
+    </script>
 </head>
-<body class="p-4">
-    <div class="container">
-        <h2 class="mb-4">Profitable Section 8 Properties</h2>
+<body>
 
-        <form method="get" class="form-inline mb-4">
-            <label class="mr-2">Min Cash Flow: $</label>
-            <input type="number" name="min_cash_flow" class="form-control mr-3" value="{{ request.args.get('min_cash_flow', '') }}">
-            
-            <label class="mr-2">Seller Financing:</label>
-            <select name="seller_financing" class="form-control mr-3">
-                <option value="">Any</option>
-                <option value="true" {% if request.args.get('seller_financing') == 'true' %}selected{% endif %}>Yes</option>
-                <option value="false" {% if request.args.get('seller_financing') == 'false' %}selected{% endif %}>No</option>
+    <h1>Profitable Section 8 Properties</h1>
+
+    <div class="filters">
+        <label>Min Cash Flow: $<input type="number" id="minCashFlow" /></label>
+        <label>Seller Financing:
+            <select id="sellerFinancing">
+                <option value="any">Any</option>
+                <option value="True">Yes</option>
+                <option value="False">No</option>
             </select>
-
-            <button type="submit" class="btn btn-primary">Filter</button>
-            <a href="/download" class="btn btn-secondary ml-2">Download CSV</a>
-        </form>
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Address</th>
-                    <th>Price</th>
-                    <th>Monthly Rent</th>
-                    <th>Expenses</th>
-                    <th>ROI (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for prop in properties %}
-                <tr>
-                    <td>{{ prop.address }}</td>
-                    <td>${{ "{:,.0f}".format(prop.price) }}</td>
-                    <td>${{ "{:,.0f}".format(prop.monthly_rent) }}</td>
-                    <td>${{ "{:,.0f}".format(prop.expenses) }}</td>
-                    <td>{{ prop.roi }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        </label>
+        <button onclick="filterTable()">Filter</button>
+        <button onclick="downloadCSV()">Download CSV</button>
     </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Address</th>
+                <th>Price</th>
+                <th>Monthly Rent</th>
+                <th>Expenses</th>
+                <th>Monthly Cash Flow</th>
+                <th>ROI (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for property in properties %}
+            <tr data-cash-flow="{{ property.monthly_cash_flow }}" data-financing="{{ property.seller_financing }}">
+                <td>{{ property.address }}</td>
+                <td>${{ "{:,.0f}".format(property.price) }}</td>
+                <td>${{ "{:,.0f}".format(property.monthly_rent) }}</td>
+                <td>${{ "{:,.0f}".format(property.expenses) }}</td>
+                <td>${{ "{:,.0f}".format(property.monthly_cash_flow) }}</td>
+                <td>
+                    {% if property.roi >= 15 %}
+                        <span class="high-roi">{{ property.roi }}%</span>
+                    {% elif property.roi >= 10 %}
+                        <span class="medium-roi">{{ property.roi }}%</span>
+                    {% else %}
+                        <span class="low-roi">{{ property.roi }}%</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </body>
 </html>
+
