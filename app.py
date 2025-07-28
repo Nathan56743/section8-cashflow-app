@@ -1,4 +1,4 @@
-import pandas as pd
+import pandas as pd 
 from flask import Flask, jsonify, render_template
 import os
 
@@ -43,10 +43,23 @@ def filter_properties():
 
 @app.route('/dashboard')
 def dashboard():
-    df = pd.read_csv('properties.csv')  # make sure this file is uploaded to your GitHub
+    df = pd.read_csv('properties.csv')
+
+    # Calculate monthly and annual cash flow
+    df["monthly_cash_flow"] = df["monthly_rent"] - df["expenses"]
+    df["annual_cash_flow"] = df["monthly_cash_flow"] * 12
+
+    # Assume 20% down payment
+    df["cash_invested"] = df["price"] * 0.20
+
+    # Calculate ROI
+    df["roi"] = (df["annual_cash_flow"] / df["cash_invested"]) * 100
+    df["roi"] = df["roi"].round(2)
+
     return render_template('dashboard.html', properties=df.to_dict(orient='records'))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
