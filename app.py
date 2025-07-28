@@ -1,5 +1,5 @@
 import pandas as pd
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 import os
 
 app = Flask(__name__)
@@ -41,13 +41,12 @@ def filter_properties():
     result = filtered.to_dict(orient="records")
     return jsonify(result)
 
+@app.route('/dashboard')
+def dashboard():
+    df = pd.read_csv('properties.csv')  # make sure this file is uploaded to your GitHub
+    return render_template('dashboard.html', properties=df.to_dict(orient='records'))
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=False)
-from flask import render_template
-import pandas as pd
 
-@app.route('/dashboard')
-def dashboard():
-    df = pd.read_csv('properties.csv')
-    return render_template('dashboard.html', properties=df.to_dict(orient='records'))
