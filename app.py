@@ -44,3 +44,10 @@ def filter_properties():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=False)
+from flask import render_template
+import pandas as pd
+
+@app.route('/dashboard')
+def dashboard():
+    df = pd.read_csv('properties.csv')
+    return render_template('dashboard.html', properties=df.to_dict(orient='records'))
