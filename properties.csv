@@ -1,0 +1,4 @@
+address,price,monthly_rent,expenses,seller_financing
+123 Elm St,85000,1350,300,True
+456 Oak Ave,90000,1300,250,False
+789 Pine Dr,80000,1250,200,True
